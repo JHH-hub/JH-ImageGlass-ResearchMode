@@ -1,0 +1,89 @@
+name: Build and Release Research Mode
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, e.g. v0.1.0-research"
+        required: true
+        default: "v0.1.0-research"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: "Source/Components/ImageGlass.Settings/WebUI/package-lock.json"
+
+      - name: Build WebUI assets
+        shell: pwsh
+        working-directory: Source/Components/ImageGlass.Settings/WebUI
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publish ImageGlass Research Mode
+        shell: pwsh
+        run: |
+          dotnet publish Source/ImageGlass/ImageGlass.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained false `
+            -p:Platform=x64 `
+            -p:PublishSingleFile=false `
+            -o artifacts/JH-ImageGlass-ResearchMode-win-x64
+
+      - name: Add research docs to package
+        shell: pwsh
+        run: |
+          Copy-Item README.md artifacts/JH-ImageGlass-ResearchMode-win-x64/README.md -Force
+          Copy-Item DATA_SCHEMA.md artifacts/JH-ImageGlass-ResearchMode-win-x64/DATA_SCHEMA.md -Force
+          Copy-Item RESEARCH_NOTES.md artifacts/JH-ImageGlass-ResearchMode-win-x64/RESEARCH_NOTES.md -Force
+          Copy-Item LICENSE artifacts/JH-ImageGlass-ResearchMode-win-x64/LICENSE -Force
+
+      - name: Create zip package
+        shell: pwsh
+        run: |
+          $tag = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ github.event.inputs.tag }}' } else { '${{ github.ref_name }}' }
+          $zip = "JH-ImageGlass-ResearchMode-$tag-win-x64.zip"
+          Compress-Archive -Path artifacts/JH-ImageGlass-ResearchMode-win-x64/* -DestinationPath $zip -Force
+          "ZIP_NAME=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: ${{ env.ZIP_NAME }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: JH-ImageGlass-ResearchMode ${{ env.RELEASE_TAG }}
+          body: |
+            Research build of ImageGlass for AI-generated image screening studies.
+
+            This is not an official ImageGlass release.
+
+            See README.md, DATA_SCHEMA.md, and RESEARCH_NOTES.md for usage and data schema.
+          files: ${{ env.ZIP_NAME }}
