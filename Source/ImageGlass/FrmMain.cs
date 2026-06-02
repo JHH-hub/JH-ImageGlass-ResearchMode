@@ -2617,17 +2617,3 @@ public partial class FrmMain : ThemedForm
 
 
 }
- // Other menu
-
-    #endregion // Main Menu component
-
-
-
-}
-her menu
-
-    #endregion // Main Menu component
-
-
-
-}
