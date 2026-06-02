@@ -138,4 +138,4 @@ Source\ImageGlass.slnx
 本项目基于 ImageGlass 修改，继续遵循 GPLv3。原项目版权归 ImageGlass 作者所有。本研究版本新增修改用于学术研究。
 
 - Original project: Copyright (C) 2010 - 2026 DUONG DIEU PHAP
-- Research modification: 王继辉 / JH, for thesis research on cognitive load in AI-generated image screening
+- Research modification: JH, for thesis research on cognitive load in AI-generated image screening
