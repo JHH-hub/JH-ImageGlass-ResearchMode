@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag, e.g. v0.1.0-research"
         required: true
-        default: "v0.1.0-research"
+        default: "v0.1.1-research"
 
 permissions:
   contents: write
@@ -55,6 +55,13 @@ jobs:
             /p:SelfContained=false `
             /p:PublishSingleFile=false `
             /p:PublishDir="$env:GITHUB_WORKSPACE\\artifacts\\JH-ImageGlass-ResearchMode-win-x64\\"
+
+      - name: Copy runtime assets (Themes, Language)
+        shell: pwsh
+        run: |
+          $dest = "artifacts/JH-ImageGlass-ResearchMode-win-x64"
+          Copy-Item -Recurse "Setup/Assets/Themes" "$dest/Themes" -Force
+          Copy-Item -Recurse "Setup/Assets/Language" "$dest/Language" -Force
 
       - name: Add research docs to package
         shell: pwsh
